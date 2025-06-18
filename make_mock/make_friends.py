@@ -30,7 +30,8 @@ def generate_fake_data(num_records):
 
 # 메인 스크립트
 def main():
-  num_people = 10_000 # 생성할 사람의 수
+  # num_people = 10_000 # 생성할 사람의 수
+  num_people = 100_000 # 생성할 사람의 수
   print(f"{num_people}명의 데이터를 생성 중...")
 
   # 가짜 데이터 생성
@@ -40,7 +41,8 @@ def main():
   df = pd.DataFrame(fake_data)
 
   # JSON 파일로 저장
-  output_file = "fake_people_data.json"
+  # output_file = "fake_people_data.json"
+  output_file = "fake_people_data_10.json"
   df.to_json(output_file, orient="records", indent=4, force_ascii=False)
 
   print(f"데이터가 JSON 파일로 저장되었습니다: {output_file}")
