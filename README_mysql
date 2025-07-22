@@ -1,0 +1,26 @@
+> 2025-07-22 atlas_ecas_mailing_chart 관련하여 처음에는 json 으로 하였다가, db 에서 읽어와 python 객체를 가지고 차트를 그리기 위하여
+> 집에서 mysql 을 설정할 필요가 있었음.
+
+# mysql 컨테이너 생성하기
+> docker run -d --name my-mysql-container -p 3306:3306 -e MYSQL_ROOT_PASSWORD=1234 -e MYSQL_DATABASE=mydatabase mysql:latest
+
+# MySQL Workbench 설치하기
+
+# MySQL Workbench에서 접속하기
+
+# 테이블 만들기
+CREATE TABLE atlas_ecas (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY, -- 자동 증가하는 고유 식별자 (PK)
+    type VARCHAR(255) NOT NULL,           -- 칼럼 1: type (varchar 형식)
+    tm DATETIME NOT NULL,                 -- 칼럼 2: tm (datetime 형식)
+    val FLOAT NOT NULL                    -- 칼럼 3: val (float 형식)
+);
+
+CREATE TABLE atlas_ecas_alarms (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY, -- 자동 증가하는 고유 식별자 (PK)
+    type VARCHAR(255) NOT NULL,           -- 칼럼 1: type (varchar 형식)
+    tm DATETIME NOT NULL,                 -- 칼럼 2: tm (datetime 형식)
+    grade INT NOT NULL                    -- 칼럼 3: grade (int 형식)
+);
+
+# python 에서 쿼리하기.
