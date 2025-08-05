@@ -61,7 +61,8 @@ def connect_to_db():
     """데이터베이스에 연결을 시도하고 커넥션 객체를 반환"""
     while True:
         try:
-            conn = mysql.connector.connect(**DB_CONFIG)
+            # autocommit=True를 추가하여 각 쿼리가 독립적인 트랜잭션으로 실행되도록 함. get_latest_statuses 함수의 "트랜잭션 스냅샵" 문제 해결.
+            conn = mysql.connector.connect(**DB_CONFIG, autocommit=True)
             logger.info("Successfully connected to the database.")
             return conn
         except mysql.connector.Error as err:
@@ -102,7 +103,7 @@ def get_latest_statuses(conn):
                 'pm_mode': row['pm_mode'],
                 'tm': row['tm']
             }
-            logger.info(f"Fetched status for eqp_id {row['eqp_id']}: pm_mode={row['pm_mode']}, tm={row['tm']}")
+            # logger.info(f"Fetched status for eqp_id {row['eqp_id']}: pm_mode={row['pm_mode']}, tm={row['tm']}")
         logger.info(f"Fetched latest statuses for {len(statuses)} equipments.")
     except mysql.connector.Error as err:
         logger.error(f"Failed to fetch latest statuses: {err}")
