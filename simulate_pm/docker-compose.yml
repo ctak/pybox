@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: ecas_mysql_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ecas_db
+      MYSQL_USER: ecas_user
+      MYSQL_PASSWORD: ecas_password
+    ports:
+      # 호스트의 3306 포트를 컨테이너의 3306 포트와 연결합니다.
+      - "3306:3306"
+    volumes:
+      # MySQL 데이터를 영속적으로 저장하기 위한 볼륨 설정
+      - mysql_data:/var/lib/mysql
+      # 컨테이너 시작 시 테이블 생성을 위해 init.sql 파일을 마운트합니다.
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  mysql_data:

@@ -1,0 +1,29 @@
+# 목적
+2025-08-05 ECAS PM 메일링을 위해 mysql 에 특정 테이블에 계속 데이터를 넣는 프로세스 하나와, 테이블을 읽어서 pm_mode 가 변경될 때 메일링을 보내는 프로세스 를 구현한다.
+
+# 실행 방법
+# 1. `docker-compose up -d` 명령어로 컨테이너를 실행 <- 이건 copilot 이 써 준 것으로 docker-compose 를 사용해서 실행하는 것이 일단 옳다.
+1. docker 에 mysql 실행.
+
+2. atlas_ecas_eqps 테이블 생성하기.
+CREATE TABLE atlas_ecas_raw (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY, -- 자동 증가하는 고유 식별자 (PK)
+    eqp_id VARCHAR(255) NOT NULL,           -- 칼럼 1: eqp_id (varchar 형식)
+    tm DATETIME NOT NULL,                   -- 칼럼 2: tm (datetime 형식)
+    val FLOAT,                      -- 칼럼 3: val (float 형식)
+    pm_mode TINYINT,                         -- 칼럼 4: pm_mode (tinyint 형식, nullable, 0: off, 1: on)
+
+    -- constraint chk_pm_mode CHECK (pm_mode IN (0, 1)) -- pm_mode 값은 0 또는 1만 허용
+    constraint eqp_id_unique unique (eqp_id, tm) -- eqp_id와 tm의 조합은 유일해야 함
+);
+
+3. 5분에 한번씩 100개의 설비에 대하여 데이터를 생성하여 atlas_ecas_raw 테이블에 삽입하기. (이 프로세스는 별도의 python 스크립트로 구현. 1번 스크립트)
+3.1 100개의 설비에 대한 pm_mode 는 1로 설정되며, 해제 시 null 로 설정한다. 각각은 1/5의 확률로 상태가 변경된다.
+
+4. pm_mode 가 변경될 때마다 메일링을 보내는 별개의 프로세스 구현. (2번 스크립트)
+4.1 pm_mode 가 변경될 때마다 메일링을 보내는 프로세스는 2분에 한번씩 실행되며, pm_mode 가 변경된 설비에 대해서만 메일링을 보낸다.
+4.2 스크립트는 최신 설비 값을 읽어서 파일로 저장한다.
+4.3 다음 스크립트가 실행될 때, 이전에 저장된 파일과 비교하여 pm_mode 가 변경된 설비에 대해서만 메일링을 보내고 최신 설비 값을 파일로 저장한다.
+4.4 2번 스크립트에서 메일링은 보내지 않고 메일 본문만 만든다.
+
+5. 두 개의 스크립트는 1일 주기로 rolling 되는 log 모듈이 있어야 한다.
