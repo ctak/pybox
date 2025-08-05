@@ -1,3 +1,4 @@
 # 결과 json 은 숨긴다.
 make_mock/*.json
 *.log
+equipment_status.json
