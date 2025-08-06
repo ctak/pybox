@@ -39,4 +39,6 @@
 --             ROW_NUMBER() OVER (PARTITION BY eqp_id ORDER BY tm DESC) as rn
         FROM
             atlas_ecas_raw
-         WHERE EQP_ID = 'EQP-017';
+         WHERE EQP_ID = 'EQP-012'
+         ORDER  BY tm desc
+         ;
