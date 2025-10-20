@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scatter Chart with Diverging Color Bar (Single Canvas)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-100 flex items-center justify-center min-h-screen py-10">
+    <div class="bg-white p-8 rounded-xl shadow-lg text-center w-full max-w-3xl">
+      <h1 class="text-2xl font-bold text-gray-800 mb-2">
+        PLS 분석 결과 시각화
+      </h1>
+      <p class="text-gray-500 mb-8">공정 조건에 따른 품질 결과 분포</p>
+
+      <!-- 하나의 캔버스에 모든 것을 그립니다. -->
+      <div>
+        <canvas
+          id="mainCanvas"
+          width="600"
+          height="560"
+          class="border border-gray-200 rounded-md"
+        ></canvas>
+      </div>
+    </div>
+
+    <script>
+      window.onload = function () {
+        // --- 시뮬레이션 데이터 ---
+        const qualityData = [
+          ...Array.from({ length: 80 }, () => 20 + Math.random() * 10 - 5),
+          ...Array.from({ length: 20 }, () => 60 + Math.random() * 20 - 10),
+        ];
+        const xData = Array.from({ length: 100 }, () => Math.random() * 10);
+        const yData = Array.from({ length: 100 }, () => Math.random() * 10);
+
+        // --- 핵심 통계량 계산 ---
+        const minVal = Math.min(...qualityData);
+        const maxVal = Math.max(...qualityData);
+        const meanVal =
+          qualityData.reduce((a, b) => a + b, 0) / qualityData.length;
+
+        /**
+         * 값에 따라 파랑(alpha=1)->투명(alpha=0)->빨강(alpha=1)으로 변하는 CSS 색상 문자열을 반환합니다.
+         */
+        function getDivergingColorString(value, min_val, mean_val, max_val) {
+          const val = Math.max(min_val, Math.min(max_val, value)); // Clamp value
+          if (val <= mean_val) {
+            // 파랑, alpha는 최소값(1)에서 평균값(0)으로 감소
+            const ratio = (val - min_val) / (mean_val - min_val || 1);
+            const alpha = 1 - ratio;
+            return `rgba(0, 0, 255, ${alpha.toFixed(2)})`;
+          } else {
+            // val > mean_val
+            // 빨강, alpha는 평균값(0)에서 최대값(1)으로 증가
+            const ratio = (val - mean_val) / (max_val - mean_val || 1);
+            const alpha = ratio;
+            return `rgba(255, 0, 0, ${alpha.toFixed(2)})`;
+          }
+        }
+
+        /**
+         * 투명도를 시각적으로 보여주기 위한 체커보드 패턴을 그립니다.
+         */
+        function drawCheckerboard(ctx, x, y, width, height, squareSize = 5) {
+          ctx.save();
+          ctx.fillStyle = "#FFFFFF"; // White background
+          ctx.fillRect(x, y, width, height);
+          ctx.fillStyle = "#E5E7EB"; // tailwind gray-200
+          const numCols = Math.ceil(width / squareSize);
+          const numRows = Math.ceil(height / squareSize);
+          for (let i = 0; i < numCols; i++) {
+            for (let j = 0; j < numRows; j++) {
+              if ((i + j) % 2 === 0) {
+                ctx.fillRect(
+                  x + i * squareSize,
+                  y + j * squareSize,
+                  squareSize,
+                  squareSize
+                );
+              }
+            }
+          }
+          ctx.restore();
+        }
+
+        const canvas = document.getElementById("mainCanvas");
+        const ctx = canvas.getContext("2d");
+
+        // --- 레이아웃 정의 ---
+        const margin = 50;
+        const colorBarAreaHeight = 60; // 상단 색상 막대 영역 높이
+        const barThickness = 25; // 색상 막대 두께
+
+        // --- 1. 상단 가로 색상 막대 그리기 ---
+        const barWidth = canvas.width - margin * 2;
+        const barX = margin;
+        const barY = 20; // 캔버스 상단에서 약간의 여백
+
+        // 투명도를 보여주기 위해 체커보드 배경을 먼저 그립니다.
+        drawCheckerboard(ctx, barX, barY, barWidth, barThickness);
+
+        const meanOffset = (meanVal - minVal) / (maxVal - minVal);
+        const meanX = barX + barWidth * meanOffset;
+
+        // 그라디언트 1: 파랑 -> 투명 파랑
+        const gradientLeft = ctx.createLinearGradient(barX, 0, meanX, 0);
+        gradientLeft.addColorStop(0, "rgba(0, 0, 255, 1)");
+        gradientLeft.addColorStop(1, "rgba(0, 0, 255, 0)");
+        ctx.fillStyle = gradientLeft;
+        ctx.fillRect(barX, barY, barWidth * meanOffset, barThickness);
+
+        // 그라디언트 2: 투명 빨강 -> 빨강
+        const gradientRight = ctx.createLinearGradient(
+          meanX,
+          0,
+          barX + barWidth,
+          0
+        );
+        gradientRight.addColorStop(0, "rgba(255, 0, 0, 0)");
+        gradientRight.addColorStop(1, "rgba(255, 0, 0, 1)");
+        ctx.fillStyle = gradientRight;
+        ctx.fillRect(meanX, barY, barWidth * (1 - meanOffset), barThickness);
+
+        // 라벨 텍스트 그리기
+        ctx.fillStyle = "#374151";
+        ctx.font = "12px 'Inter', sans-serif";
+        ctx.textBaseline = "top";
+
+        ctx.textAlign = "left";
+        ctx.fillText(
+          `${minVal.toFixed(1)} (Min)`,
+          barX,
+          barY + barThickness + 5
+        );
+        ctx.textAlign = "center";
+        ctx.fillText(
+          `${meanVal.toFixed(1)} (Mean)`,
+          barX + barWidth * meanOffset,
+          barY + barThickness + 5
+        );
+        ctx.textAlign = "right";
+        ctx.fillText(
+          `${maxVal.toFixed(1)} (Max)`,
+          barX + barWidth,
+          barY + barThickness + 5
+        );
+
+        // --- 2. 스캐터 차트 그리기 ---
+        const plotAreaX = margin;
+        const plotAreaY = colorBarAreaHeight;
+        const plotWidth = canvas.width - margin * 2;
+        const plotHeight = canvas.height - colorBarAreaHeight - margin;
+
+        // 데이터 좌표를 캔버스 좌표로 변환하는 함수
+        const mapX = (val) => plotAreaX + (val / 10) * plotWidth;
+        const mapY = (val) => plotAreaY + plotHeight - (val / 10) * plotHeight;
+
+        // 축 그리기
+        ctx.beginPath();
+        ctx.moveTo(plotAreaX, plotAreaY);
+        ctx.lineTo(plotAreaX, plotAreaY + plotHeight);
+        ctx.lineTo(plotAreaX + plotWidth, plotAreaY + plotHeight);
+        ctx.strokeStyle = "#D1D5DB"; // gray-300
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // 축 라벨
+        ctx.fillStyle = "#4B5563"; // gray-600
+        ctx.font = "bold 14px 'Inter', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(
+          "Latent Variable 1 (t1)",
+          canvas.width / 2,
+          canvas.height - 15
+        );
+        ctx.save();
+        ctx.translate(15, plotAreaY + plotHeight / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText("Latent Variable 2 (t2)", 0, 0);
+        ctx.restore();
+
+        // 데이터 포인트 그리기
+        for (let i = 0; i < xData.length; i++) {
+          const x = mapX(xData[i]);
+          const y = mapY(yData[i]);
+
+          ctx.fillStyle = getDivergingColorString(
+            qualityData[i],
+            minVal,
+            meanVal,
+            maxVal
+          );
+          ctx.strokeStyle = "rgba(0, 0, 0, 0.4)";
+          ctx.lineWidth = 1;
+
+          ctx.beginPath();
+          ctx.arc(x, y, 5, 0, 2 * Math.PI); // 반지름 5px의 원
+          ctx.fill();
+          ctx.stroke();
+        }
+      };
+    </script>
+  </body>
+</html>
