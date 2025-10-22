@@ -56,6 +56,71 @@
       <div class="checkerboard-bg">
         <div class="spectrum-bar"></div>
       </div>
+      <div>
+        <h2>java script 로 구현해보기</h2>
+        <div class="bar" style="height: 50px; border-radius: 5px"></div>
+      </div>
+      <button onclick="clicked()">Click me</button>
+      <div style="display: flex; align-items: center; margin-top: 1rem">
+        <p style="margin-right: 20px">pls chart</p>
+
+        <div
+          class="pls-spectrum"
+          style="
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+          "
+        >
+          <span style="min-width: 48px; text-align: right">0</span>
+          <div
+            style="
+              flex-grow: 1;
+              height: 16px;
+              background: linear-gradient(to right, blue, transparent, red);
+            "
+          ></div>
+          <span style="min-width: 48px">0</span>
+        </div>
+      </div>
     </div>
+    <script>
+      // JavaScript로 동적으로 스펙트럼 바 생성
+      const spectrumBar = document.querySelector(".bar");
+
+      function createSpectrumGradient() {
+        console.log("Creating spectrum gradient...");
+        const gradient = "linear-gradient(to right, blue, transparent, red)";
+        spectrumBar.style.background = gradient;
+      }
+
+      createSpectrumGradient();
+
+      function clicked() {
+        const plsSpectrum = document.querySelector(".pls-spectrum");
+        plsSpectrum.style.opacity == "0"
+          ? (plsSpectrum.style.opacity = "1")
+          : (plsSpectrum.style.opacity = "0");
+      }
+
+      function createPlsSpectrum() {
+        const plsSpectrum = document.querySelector(".pls-spectrum");
+        const min = plsSpectrum.querySelector("div:first-child");
+        const center = plsSpectrum.querySelector("div:nth-child(2)");
+        const max = plsSpectrum.querySelector("div:last-child");
+        console.log(center);
+        const gradient = "linear-gradient(to right, blue, transparent, red)";
+        center.style.background = gradient;
+        center.style.height = "16px";
+        // center.style.borderRadius = "5px";
+      }
+
+      // createPlsSpectrum();
+    </script>
   </body>
 </html>
